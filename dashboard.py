@@ -12,6 +12,7 @@ from owid.grapher import Chart # pip install git+https://github.com/owid/owid-gr
 import warnings
 warnings.filterwarnings('ignore')
 import streamlit as st
+import math
 
 # Custom matplotlib style
 custom_style = {
@@ -445,68 +446,69 @@ def mas_state_covid():
 # state = mas_state_covid()
 # Chart(state).mark_line().encode(x='date', y='cases_new', c='state').label('Malaysia State Cases New Breakdown').interact(scale_control=True)
 # ######################################################################################################################
-# def vaccinations_data():
-#     vax = pd.read_csv('https://raw.githubusercontent.com/CITF-Malaysia/citf-public/main/vaccination/vax_state.csv')
-#     vax = vax[['date', 'state', 'daily', 'cumul']]
-#     cases = pd.read_csv('https://raw.githubusercontent.com/MoH-Malaysia/covid19-public/main/epidemic/cases_state.csv')
-#     cases = cases[cases['date'] > '2021-02-23']
-#     cases = cases[['date', 'state', 'cases_new']]
-#     combine = pd.merge(vax, cases, how='left', on=['date', 'state'])
-#     combine['date'] = pd.to_datetime(combine['date'])
-#     combine.rename(columns={'date': 'Date', 'state': 'State', 'daily': 'Daily Vaccinations', 'cumul': 'Cumulative Vaccinated', 'cases_new': 'Daily New Cases'}, inplace=True)
-#     combine.set_index('Date', inplace=True)
+def vaccinations_data():
+    vax = pd.read_csv('https://raw.githubusercontent.com/CITF-Malaysia/citf-public/main/vaccination/vax_state.csv')
+    vax = vax[['date', 'state', 'daily', 'cumul']]
+    cases = pd.read_csv('https://raw.githubusercontent.com/MoH-Malaysia/covid19-public/main/epidemic/cases_state.csv')
+    cases = cases[cases['date'] > '2021-02-23']
+    cases = cases[['date', 'state', 'cases_new']]
+    combine = pd.merge(vax, cases, how='left', on=['date', 'state'])
+    combine['date'] = pd.to_datetime(combine['date'])
+    combine.rename(columns={'date': 'Date', 'state': 'State', 'daily': 'Daily Vaccinations', 'cumul': 'Cumulative Vaccinated', 'cases_new': 'Daily New Cases'}, inplace=True)
+    combine.set_index('Date', inplace=True)
     
-#     for c in combine.columns[1:]:
-#         combine[c] = round((combine[c] - combine[c].min())/(combine[c].max() - combine[c].min()), 4)
+    for c in combine.columns[1:]:
+        combine[c] = round((combine[c] - combine[c].min())/(combine[c].max() - combine[c].min()), 4)
 
-# #     combine = pd.melt(combine, id_vars='State', value_vars=['Daily Vaccinations', 'Cumulative Vaccinated', 'Daily New Cases'], value_name='Scaled Values', ignore_index=False)
-# #     combine.rename(columns={'variable': 'Variable'}, inplace=True)
+#     combine = pd.melt(combine, id_vars='State', value_vars=['Daily Vaccinations', 'Cumulative Vaccinated', 'Daily New Cases'], value_name='Scaled Values', ignore_index=False)
+#     combine.rename(columns={'variable': 'Variable'}, inplace=True)
 
-#     display(combine.plot(kind='line', figsize=(20,10), title='Does Vaccine Program Helps ?', ylabel='Scaled Values', fontsize=14))
+    display(combine.plot(kind='line', figsize=(20,10), title='Does Vaccine Program Helps ?', ylabel='Scaled Values', fontsize=14))
 
-# st.header('Does Vaccination Helps?')
-# vaccinations_data()
+st.header('Does Vaccine Program Helps?')
+st.set_option('deprecation.showPyplotGlobalUse', False)
+st.pyplot(vaccinations_data())
 # ######################################################################################################################
-# def vaccinations_rate():
-#     vax = pd.read_csv('https://raw.githubusercontent.com/CITF-Malaysia/citf-public/main/vaccination/vax_state.csv')
-#     pop = pd.read_csv('https://raw.githubusercontent.com/MoH-Malaysia/covid19-public/main/static/population.csv')
-#     vax = vax[['date', 'state', 'cumul_full']]
-#     vax['Population'] = vax['state'].copy()
-#     population = dict(zip(pop['state'], pop['pop']))
-#     vax.replace({'Population': population}, inplace=True)
-#     vax['left'] = vax['Population']-vax['cumul_full']
-#     vax['rate'] = (vax['cumul_full']/vax['Population'])*100
-#     vax['date'] = pd.to_datetime(vax['date'])
+def vaccinations_rate():
+    vax = pd.read_csv('https://raw.githubusercontent.com/CITF-Malaysia/citf-public/main/vaccination/vax_state.csv')
+    pop = pd.read_csv('https://raw.githubusercontent.com/MoH-Malaysia/covid19-public/main/static/population.csv')
+    vax = vax[['date', 'state', 'cumul_full']]
+    vax['Population'] = vax['state'].copy()
+    population = dict(zip(pop['state'], pop['pop']))
+    vax.replace({'Population': population}, inplace=True)
+    vax['left'] = vax['Population']-vax['cumul_full']
+    vax['rate'] = (vax['cumul_full']/vax['Population'])*100
+    vax['date'] = pd.to_datetime(vax['date'])
     
-#     whole_malaysia_rate = list()
-#     for d in vax['date'].unique():
-#         temp = vax[vax['date']==d]
-#         whole_malaysia_rate.append(temp['rate'].sum()/len(temp))
+    whole_malaysia_rate = list()
+    for d in vax['date'].unique():
+        temp = vax[vax['date']==d]
+        whole_malaysia_rate.append(temp['rate'].sum()/len(temp))
         
-#     whole_malaysia_rate = pd.DataFrame(data={'Vaccination Rate': whole_malaysia_rate}, index=vax['date'].unique())
-#     fig, ax = plt.subplots(figsize=(10,5))
-#     plt.plot(whole_malaysia_rate.index, whole_malaysia_rate['Vaccination Rate'], label='Vaccination Rate')
-#     ax.hlines(y=80, xmin=whole_malaysia_rate.index.min(), xmax=whole_malaysia_rate.index.max(), linewidth=2, color='g', label='Herd Immunity Index')
-#     plt.title('When we able hit herd immunity ?'); plt.legend(); plt.xlabel('Date'); plt.ylabel('Vaccination Rate')
-#     plt.suptitle('Malaysia Overview', x=.25, y=1, fontsize=18, fontweight='ultralight')
-#     plt.ylim([0,100])
+    whole_malaysia_rate = pd.DataFrame(data={'Vaccination Rate': whole_malaysia_rate}, index=vax['date'].unique())
+    fig, ax = plt.subplots(figsize=(10,5))
+    plt.plot(whole_malaysia_rate.index, whole_malaysia_rate['Vaccination Rate'], label='Vaccination Rate')
+    ax.hlines(y=80, xmin=whole_malaysia_rate.index.min(), xmax=whole_malaysia_rate.index.max(), linewidth=2, color='g', label='Herd Immunity Index')
+    plt.legend(); plt.xlabel('Date'); plt.ylabel('Vaccination Rate')
+    plt.suptitle('Malaysia Overview', x=.25, y=1, fontsize=18, fontweight='ultralight')
+    plt.ylim([0,100])
     
-#     display(whole_malaysia_rate.index.max())
-#     vax.columns = ['Date', 'State', 'Cumulative Fully Vaccinated', 'Population', 'Leftover Individual', 'Vaccination Rate']
+    display(whole_malaysia_rate.index.max())
+    vax.columns = ['Date', 'State', 'Cumulative Fully Vaccinated', 'Population', 'Leftover Individual', 'Vaccination Rate']
     
-#     return alt.Chart(vax).mark_line().encode(
-#         x='Date',
-#         y='Vaccination Rate',
-#         color='State',
-#         tooltip=['Date', 'Vaccination Rate', 'State', 'Cumulative Fully Vaccinated', 'Leftover Individual']).configure_axis(
-#         labelFontSize=10, 
-#         titleFontSize=14).properties(width=500, title={
-#         'text': ['Vaccinations Rate State Break In Malaysia'],
-#         'subtitle': ['Overflow cause by non naive identity or vaccine assigned to cross border innoculator']},)
+    return alt.Chart(vax).mark_line().encode(
+        x='Date',
+        y='Vaccination Rate',
+        color='State',
+        tooltip=['Date', 'Vaccination Rate', 'State', 'Cumulative Fully Vaccinated', 'Leftover Individual']).configure_axis(
+        labelFontSize=10, 
+        titleFontSize=14).properties(width=500, title={
+        'text': ['Vaccinations Rate State Break In Malaysia'],
+        'subtitle': ['Overflow cause by non naive identity or vaccine assigned to cross border innoculator']},)
     
-#     # display(vax, lastest_frame)
-# st.header('Vaccination Rate State Break in Malaysia')
-# vaccinations_rate()
+    # display(vax, lastest_frame)
+st.header('When We Able Hit Herd Immunity?')
+st.altair_chart(vaccinations_rate())
 # ######################################################################################################################
 def prepare_and_preprocessing():
     ts_data = pd.read_csv('./datasets/ts_data.csv')
@@ -767,7 +769,7 @@ st.header('Forecasting on COVID-19 Malaysia New Cases Moving Average with LASSO 
 
 with st.form(key='my_form_2'):
     ntf = int(st.number_input('Insert number of ntf', value=3))
-    lag = int(st.number_input('Insert number of forecast', value=21))
+    lag = int(st.number_input('Insert number of lag', value=21))
     forecast_2 = int(st.number_input('Insert number of forecast', value=60))
 
     submit_2 = st.form_submit_button(label='Submit')
@@ -870,7 +872,17 @@ def abstract_and_portray(df, custom_style):
         ax.yaxis.set_label_position('right')
         plt.legend()
 
-    st.metric(label='Precision', value=metrics.precision_score(testy, predy_rfr))
+    col1, col2 = st.columns(2)
+
+    precision_rfr = metrics.precision_score(testy, predy_rfr)
+    precision_rfr = "{:.2f}%".format(precision_rfr*100)
+    col1.metric(label='Random Forest Precision', value=precision_rfr)
+
+    precision_tre = metrics.precision_score(testy, predy_tre)
+    precision_tre = "{:.2f}%".format(precision_tre*100)
+    col2.metric(label='Decision Tree Precision', value=precision_tre)
+
+
     
 roc = abstract_and_portray(individual, custom_style)
 st.pyplot(roc)
