@@ -769,7 +769,7 @@ def lasso_model(df, cn, ntf, lag, forecast, style, plot):
 st.header('Forecasting on COVID-19 Malaysia New Cases Moving Average with LASSO MODEL')
 
 with st.form(key='my_form_2'):
-    ntf = int(st.number_input('Insert number of ntf', value=3))
+    ntf = int(st.number_input('Insert number of ntf (Max=7)', value=3))
     lag = int(st.number_input('Insert number of lag', value=21))
     forecast_2 = int(st.number_input('Insert number of forecast', value=60))
 
