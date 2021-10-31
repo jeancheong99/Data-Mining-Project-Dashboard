@@ -13,7 +13,6 @@ alt.data_transformers.disable_max_rows()
 import warnings
 warnings.filterwarnings('ignore')
 import streamlit as st
-from streamlit_metrics import metric, metric_row
 import math
 
 # Custom matplotlib style
