@@ -635,7 +635,7 @@ with st.form(key='my_form'):
     window = int(st.number_input('Insert number of window', value=45))
     forecast = int(st.number_input('Insert number of forecast', value=30))
     epochs = int(st.number_input('Insert number of epochs', value=1))
-    bs = int(st.number_input('Insert number of bs', value=8))
+    bs = int(st.number_input('Insert number of batch size', value=8))
     n_samples = int(st.number_input('Insert number of samples', value=1))
 
     submit = st.form_submit_button(label='Submit')
