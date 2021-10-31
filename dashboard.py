@@ -8,7 +8,7 @@ import os
 from tqdm import tqdm
 import altair as alt
 alt.data_transformers.disable_max_rows()
-from owid.grapher import Chart # pip install git+https://github.com/owid/owid-grapher-py
+#from owid.grapher import Chart # pip install git+https://github.com/owid/owid-grapher-py
 import warnings
 warnings.filterwarnings('ignore')
 import streamlit as st
