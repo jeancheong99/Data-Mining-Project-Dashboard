@@ -1,4 +1,5 @@
-from sklearn import preprocessing, model_selection, linear_model, metrics, neighbors, cluster, decomposition
+from sklearn import preprocessing, model_selection, linear_model, metrics, neighbors, cluster, decomposition, ensemble, naive_bayes, tree
+from imblearn.over_sampling import SMOTE
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
@@ -12,6 +13,7 @@ alt.data_transformers.disable_max_rows()
 import warnings
 warnings.filterwarnings('ignore')
 import streamlit as st
+from streamlit_metrics import metric, metric_row
 import math
 
 # Custom matplotlib style
@@ -57,8 +59,7 @@ def get_data():
     world = pd.read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/latest/owid-covid-latest.csv')
     
     # Summarize mobility report from various sources: Google, Appple, Waze, TomTom encompassing few metrics on individual 
-    # indices = pd.read_csv('https://raw.githubusercontent.com/ActiveConclusion/COVID19_mobility/master/summary_reports/summary_report_countries.csv')
-    indices = pd.read_csv('./datasets/indices.csv')
+    indices = pd.read_csv('https://raw.githubusercontent.com/ActiveConclusion/COVID19_mobility/master/summary_reports/summary_report_countries.csv')
     
     return world, indices
 
@@ -131,8 +132,7 @@ world, indices, fcindices, lcindices, cindices_concated, cindices, = preprocessi
 ##########################################################################
 # OWID COVID-19 Dataset
 def get_data_long(selected):
-    # al = pd.read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv')
-    al = pd.read_csv('https://covid.ourworldindata.org/data/owid-covid-data.csv')
+    al = pd.read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv')
     al = al[al['location'].isin(selected)] # Filtered selected countries
     al = al[['location', 'date', 'total_cases', 'new_cases', 'total_deaths', 'new_deaths', 'total_tests', 'new_tests', 'total_vaccinations', 'new_vaccinations', 'population']] # Filtered columns
     al.columns = ['Country', 'Date', 'Total Cases', 'New Cases', 'Total Deaths', 'New Deaths', 'Total Tests', 'New Tests', 'Total Vaccinations', 'New Vaccinations', 'Population'] # Rename columns
@@ -523,6 +523,7 @@ def prepare_and_preprocessing():
 
 ts_data, data = prepare_and_preprocessing()
 # ######################################################################################################################
+# Commensurate lstm.py  
 def lstm_model(df, cn, window, forecast, epochs, bs, style, n_samples=1, seed=True, plot=True):
     """
     Train and forecast LSTM. 
@@ -670,6 +671,7 @@ def get_mas_covid2():
     
     return mas
 ######################################################################################################################
+# Commensurate lasso.py
 def lasso_model(df, cn, ntf, lag, forecast, style, plot):
     """
     Timeseries to supervised and forecast Lasso
@@ -805,7 +807,6 @@ def abstract_and_portray(df, custom_style):
 
     ndf = ndf[ndf['age']>0] 
 
-    from sklearn import ensemble, model_selection, metrics, preprocessing, naive_bayes, tree
     rfr = ensemble.RandomForestClassifier()
     # nb = naive_bayes.GaussianNB()
     dtre = tree.DecisionTreeClassifier()
@@ -817,7 +818,6 @@ def abstract_and_portray(df, custom_style):
     X = ndf.drop(columns=['survived'])
     y = ndf['survived']
     
-    from imblearn.over_sampling import SMOTE
     os = SMOTE(random_state=10)
     osX, osy = os.fit_resample(X, y)
     trainX, testX, trainy, testy = model_selection.train_test_split(osX, osy, test_size=.2, random_state=7)
@@ -855,9 +855,7 @@ def abstract_and_portray(df, custom_style):
     fpr_rfr, tpr_rfr, thresholds_rfr = metrics.roc_curve(testy, result_list[0]) 
     # fpr_nb, tpr_nb, thresholds_nb = metrics.roc_curve(testy, result_list[1]) 
     fpr_dtre, tpr_dtre, thresholds_dtre = metrics.roc_curve(testy, result_list[1]) 
-    
-    import matplotlib.pyplot as plt
-    
+        
     st.header('Receiver Operating Characteristic (ROC) Curve')
 
     with plt.style.context(custom_style):
