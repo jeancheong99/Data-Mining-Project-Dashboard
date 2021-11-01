@@ -8,7 +8,6 @@ import os
 from tqdm import tqdm
 import altair as alt
 alt.data_transformers.disable_max_rows()
-from owid.grapher import Chart # pip install git+https://github.com/owid/owid-grapher-py
 import warnings
 warnings.filterwarnings('ignore')
 import streamlit as st
@@ -902,7 +901,6 @@ def abstract_and_portray(df, custom_style):
     # fpr_nb, tpr_nb, thresholds_nb = metrics.roc_curve(testy, result_list[1]) 
     fpr_dtre, tpr_dtre, thresholds_dtre = metrics.roc_curve(testy, result_list[1]) 
     
-    import matplotlib.pyplot as plt
     
     st.header('Receiver Operating Characteristic (ROC) Curve')
 
