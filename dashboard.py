@@ -132,7 +132,8 @@ world, indices, fcindices, lcindices, cindices_concated, cindices, = preprocessi
 ##########################################################################
 # OWID COVID-19 Dataset
 def get_data_long(selected):
-    al = pd.read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv')
+    # al = pd.read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv')
+    al = pd.read_csv('https://covid.ourworldindata.org/data/owid-covid-data.csv')
     al = al[al['location'].isin(selected)] # Filtered selected countries
     al = al[['location', 'date', 'total_cases', 'new_cases', 'total_deaths', 'new_deaths', 'total_tests', 'new_tests', 'total_vaccinations', 'new_vaccinations', 'population']] # Filtered columns
     al.columns = ['Country', 'Date', 'Total Cases', 'New Cases', 'Total Deaths', 'New Deaths', 'Total Tests', 'New Tests', 'Total Vaccinations', 'New Vaccinations', 'Population'] # Rename columns
