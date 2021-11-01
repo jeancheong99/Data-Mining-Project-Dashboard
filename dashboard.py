@@ -1,5 +1,4 @@
-from sklearn import preprocessing, model_selection, linear_model, metrics, neighbors, cluster, decomposition, ensemble, naive_bayes, tree
-from imblearn.over_sampling import SMOTE
+from sklearn import preprocessing, model_selection, linear_model, metrics, neighbors, cluster, decomposition
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
@@ -9,12 +8,15 @@ import os
 from tqdm import tqdm
 import altair as alt
 alt.data_transformers.disable_max_rows()
-#from owid.grapher import Chart # pip install git+https://github.com/owid/owid-grapher-py
+from owid.grapher import Chart # pip install git+https://github.com/owid/owid-grapher-py
 import warnings
 warnings.filterwarnings('ignore')
 import streamlit as st
 import math
 
+st.set_page_config(layout="wide")
+
+st.title("Covid-19 in Malaysia Dashboard")
 # Custom matplotlib style
 custom_style = {
     'figure.autolayout': True,
@@ -218,7 +220,7 @@ def compiled_data(selected, df_long, indices, index_data):
 df = compiled_data(selected, df_long, indices, index_data)
 
 ######################################################################################################################
-st.header('Exploratory Data Analysis')
+st.header('Country Cases Per Hundred vs Population Density')
 dots = alt.Chart(world).transform_calculate(
         url='https://www.google.com/search?q=' + alt.datum.Country + ' Covid-19',
 ).mark_circle().encode(
@@ -236,7 +238,7 @@ dots.configure_axis(
     labelFontSize=10, 
     titleFontSize=14
 ).properties(
-    width=1400, 
+    width=1000, 
     height=500
 )
 
@@ -443,9 +445,44 @@ def mas_state_covid():
     
     return state
 # ######################################################################################################################
-# st.header('Animated State Cases')
-# state = mas_state_covid()
-# Chart(state).mark_line().encode(x='date', y='cases_new', c='state').label('Malaysia State Cases New Breakdown').interact(scale_control=True)
+# def clustering_mas():
+#     state = mas_state_covid()
+#     df = state.copy()
+#     df.drop(columns=['date'], inplace=True) 
+        
+#     s_columns = df.columns[1:]
+#     scaler = preprocessing.MinMaxScaler()
+#     df[s_columns] = scaler.fit_transform(df[s_columns])
+    
+#     dr = decomposition.PCA(n_components=2).fit_transform(df.drop(columns=['state']))
+#     print('Before')
+#     display(df.drop(columns=['state']))
+#     print('After')
+#     display(dr)
+#     fig, axes = plt.subplots(1, 10, figsize=(50,5), dpi=200)
+#     for col in tqdm(range(1, 11)):
+#         clustering = cluster.AgglomerativeClustering(n_clusters=col).fit(dr)
+#         axes[col-1].scatter(dr[:,0], dr[:,1], c=clustering.labels_)
+#         axes[col-1].set_title('n_clusters={}'.format(col))
+    
+#     clustering = cluster.AgglomerativeClustering(n_clusters=5).fit(dr)
+#     df['clusters'] = clustering.labels_
+
+#     return alt.Chart(df.groupby(['state', 'clusters'], as_index=False)[['cases_new', 'cases_total']].sum().rename(columns={'cases_total': 'Normalize Total Cases',
+#                                                                                                                            'state': 'State',
+#                                                                                                                            'clusters': 'Clusters'})).mark_bar().encode(
+#         x='State:O',
+#         y=alt.Y('Normalize Total Cases:Q', axis=alt.Axis(labels=False)),
+#         color='Clusters:N',
+#         tooltip=['Clusters']
+#     ).configure_axis(
+#         labelFontSize=10, 
+#         titleFontSize=14).properties(width=500, title={
+#         'text': ['Cluster among Malaysia State'],
+#         'subtitle': ['Dimentionality reduction and hierarchical clustering on Cases, Deaths, Hospitality, Tests aggregate data']},)
+
+# st.header('Cluster among Malaysia State')
+# st.altair_chart(clustering_mas())
 # ######################################################################################################################
 def vaccinations_data():
     vax = pd.read_csv('https://raw.githubusercontent.com/CITF-Malaysia/citf-public/main/vaccination/vax_state.csv')
@@ -490,26 +527,34 @@ def vaccinations_rate():
     fig, ax = plt.subplots(figsize=(10,5))
     plt.plot(whole_malaysia_rate.index, whole_malaysia_rate['Vaccination Rate'], label='Vaccination Rate')
     ax.hlines(y=80, xmin=whole_malaysia_rate.index.min(), xmax=whole_malaysia_rate.index.max(), linewidth=2, color='g', label='Herd Immunity Index')
-    plt.legend(); plt.xlabel('Date'); plt.ylabel('Vaccination Rate')
+    plt.title('When we able hit herd immunity ?'); plt.legend(); plt.xlabel('Date'); plt.ylabel('Vaccination Rate')
     plt.suptitle('Malaysia Overview', x=.25, y=1, fontsize=18, fontweight='ultralight')
     plt.ylim([0,100])
     
-    display(whole_malaysia_rate.index.max())
+    immunity = fig
     vax.columns = ['Date', 'State', 'Cumulative Fully Vaccinated', 'Population', 'Leftover Individual', 'Vaccination Rate']
     
-    return alt.Chart(vax).mark_line().encode(
-        x='Date',
-        y='Vaccination Rate',
-        color='State',
-        tooltip=['Date', 'Vaccination Rate', 'State', 'Cumulative Fully Vaccinated', 'Leftover Individual']).configure_axis(
-        labelFontSize=10, 
-        titleFontSize=14).properties(width=500, title={
-        'text': ['Vaccinations Rate State Break In Malaysia'],
-        'subtitle': ['Overflow cause by non naive identity or vaccine assigned to cross border innoculator']},)
-    
+    vaccine_rate = alt.Chart(vax).mark_line().encode(
+                    x='Date',
+                    y='Vaccination Rate',
+                    color='State',
+                    tooltip=['Date', 'Vaccination Rate', 'State', 'Cumulative Fully Vaccinated', 'Leftover Individual']).configure_axis(
+                    labelFontSize=10, 
+                    titleFontSize=14).properties(width=650, height=400, title={
+                    'text': ['Vaccinations Rate State Break In Malaysia'],
+                    'subtitle': ['Overflow cause by non naive identity or vaccine assigned to cross border innoculator']},)
+
+    return immunity,vaccine_rate
+
     # display(vax, lastest_frame)
-st.header('When We Able Hit Herd Immunity?')
-st.altair_chart(vaccinations_rate())
+
+immunity, vaccine_rate = vaccinations_rate()
+# st.header('When We Able Hit Herd Immunity?')
+
+col1, col2 = st.columns(2)
+col1.altair_chart(vaccine_rate)
+st.set_option('deprecation.showPyplotGlobalUse', False)
+col2.pyplot(immunity)
 # ######################################################################################################################
 def prepare_and_preprocessing():
     ts_data = pd.read_csv('./datasets/ts_data.csv')
@@ -635,7 +680,7 @@ with st.form(key='my_form'):
     window = int(st.number_input('Insert number of window', value=45))
     forecast = int(st.number_input('Insert number of forecast', value=30))
     epochs = int(st.number_input('Insert number of epochs', value=1))
-    bs = int(st.number_input('Insert number of batch size', value=8))
+    bs = int(st.number_input('Insert number of bs', value=8))
     n_samples = int(st.number_input('Insert number of samples', value=1))
 
     submit = st.form_submit_button(label='Submit')
@@ -769,7 +814,7 @@ def lasso_model(df, cn, ntf, lag, forecast, style, plot):
 st.header('Forecasting on COVID-19 Malaysia New Cases Moving Average with LASSO MODEL')
 
 with st.form(key='my_form_2'):
-    ntf = int(st.number_input('Insert number of ntf (Max=7)', value=3))
+    ntf = int(st.number_input('Insert number of ntf', value=3))
     lag = int(st.number_input('Insert number of lag', value=21))
     forecast_2 = int(st.number_input('Insert number of forecast', value=60))
 
@@ -806,6 +851,7 @@ def abstract_and_portray(df, custom_style):
 
     ndf = ndf[ndf['age']>0] 
 
+    from sklearn import ensemble, model_selection, metrics, preprocessing, naive_bayes, tree
     rfr = ensemble.RandomForestClassifier()
     # nb = naive_bayes.GaussianNB()
     dtre = tree.DecisionTreeClassifier()
@@ -817,6 +863,7 @@ def abstract_and_portray(df, custom_style):
     X = ndf.drop(columns=['survived'])
     y = ndf['survived']
     
+    from imblearn.over_sampling import SMOTE
     os = SMOTE(random_state=10)
     osX, osy = os.fit_resample(X, y)
     trainX, testX, trainy, testy = model_selection.train_test_split(osX, osy, test_size=.2, random_state=7)
@@ -854,7 +901,9 @@ def abstract_and_portray(df, custom_style):
     fpr_rfr, tpr_rfr, thresholds_rfr = metrics.roc_curve(testy, result_list[0]) 
     # fpr_nb, tpr_nb, thresholds_nb = metrics.roc_curve(testy, result_list[1]) 
     fpr_dtre, tpr_dtre, thresholds_dtre = metrics.roc_curve(testy, result_list[1]) 
-        
+    
+    import matplotlib.pyplot as plt
+    
     st.header('Receiver Operating Characteristic (ROC) Curve')
 
     with plt.style.context(custom_style):
