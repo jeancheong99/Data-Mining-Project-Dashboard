@@ -932,5 +932,83 @@ def abstract_and_portray(df, custom_style):
 roc = abstract_and_portray(individual, custom_style)
 st.pyplot(roc)
 ######################################################################################################################
+def model_rfr(df):
+    ndf = df.copy()
+
+    ndf = ndf[ndf['age']>0] 
+
+    from sklearn import ensemble, model_selection, metrics, preprocessing, naive_bayes, tree
+    rfr = ensemble.RandomForestClassifier()
+
+    ndf['age'] = pd.cut(x=ndf['age'], bins=[0, 20, 30, 40, 50, 60, 70, 80, 90, 150], labels=['0-20','20-30','30-40','40-50','50-60','60-70','70-80','80-90','90+'])
+    ndf['state'] = preprocessing.LabelEncoder().fit_transform(ndf['state'])
+    ndf = pd.get_dummies(ndf, columns=['age', 'gender', 'malaysian'])
+
+    X = ndf.drop(columns=['survived'])
+    y = ndf['survived']
+    
+    from imblearn.over_sampling import SMOTE
+    os = SMOTE(random_state=10)
+    osX, osy = os.fit_resample(X, y)
+    trainX, testX, trainy, testy = model_selection.train_test_split(osX, osy, test_size=.2, random_state=7)
+    
+    rfr.fit(trainX, trainy)
+
+    return rfr
+
+survivability_rfr = model_rfr(df=individual)
+#####################################################################################################################
+def interpretation_rfr(model, your_state, your_age, your_gender, your_nationality, your_dose_1_since, your_dose_2_since):
+    
+    your_state = [your_state]
+    your_age = [your_age]
+    if your_gender == 1:
+        gender_male = 1
+        gender_female = 0
+    else:
+        gender_male = 0
+        gender_female = 1
+
+    if your_nationality == 1:
+        malaysian = 1
+        non_malaysian = 0
+    else:
+        malaysian = 0
+        non_malaysian = 1
+
+    your_dose_1_since = [your_dose_1_since]
+    your_dose_2_since = [your_dose_2_since]
+        
+    ndf = pd.DataFrame({'state': your_state, 'age': your_age, 'days_dose1': your_dose_1_since, 'days_dose2': your_dose_2_since})
+    
+    ndf['age'] = pd.cut(x=ndf['age'], bins=[0, 20, 30, 40, 50, 60, 70, 80, 90, 150], labels=['0-20','20-30','30-40','40-50','50-60','60-70','70-80','80-90','90+'])
+    ndf['state'] = preprocessing.LabelEncoder().fit_transform(ndf['state'])
+    ndf = pd.get_dummies(ndf, columns=['age'])
+    
+    ndf['gender_female']= gender_female
+    ndf['gender_male'] = gender_male
+    ndf['malaysian_0'] = malaysian
+    ndf['malaysian_1'] = non_malaysian
+    
+    pred = model.predict(ndf)
+    if pred[0] == 0:
+        print('Sorry...')
+    elif pred[0] == 1:
+        print('You are Survival ! Stay Health and Stay Safe')
+
+#######################################################################################################################
+st.header('Test your survivability when you affected COVID-19 based on following characteristics')
+
+with st.form(key='my_form_3'):
+    your_state = str(st.number_input('In which state you currently stay', value='Selangor, Pahang, etc'))
+    your_age = int(st.number_input('How old are you', value=21))
+    your_gender = str(st.number_input('Gender', value='male or female'))
+    your_nationality = int(st.number_input('Malaysian ?', value='1 for Malaysian, 0 for foreigner'))
+    your_dose_1_since = int(st.number_input('How long since your took your first dose of vaccine ?', value='30, 30 days since your first dose'))
+    your_dose_2_since = int(st.number_input('How long since your took your second dose of vaccine ?', value='10, 10 days since your second dose'))   
+
+    submit_3 = st.form_submit_button(label='Submit')
+
+interpretation_rfr(survivability_rfr, your_state, your_age, your_gender, your_nationality, your_dose_1_since, your_dose_2_since)
 
 
