@@ -1,4 +1,5 @@
 from sklearn import preprocessing, model_selection, linear_model, metrics, neighbors, cluster, decomposition
+from keras import utils as np_utils
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
