@@ -1,5 +1,4 @@
 from sklearn import preprocessing, model_selection, linear_model, metrics, neighbors, cluster, decomposition
-from keras import utils as np_utils
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
@@ -9,6 +8,7 @@ import os
 from tqdm import tqdm
 import altair as alt
 alt.data_transformers.disable_max_rows()
+from owid.grapher import Chart # pip install git+https://github.com/owid/owid-grapher-py
 import warnings
 warnings.filterwarnings('ignore')
 import streamlit as st
@@ -133,8 +133,7 @@ world, indices, fcindices, lcindices, cindices_concated, cindices, = preprocessi
 ##########################################################################
 # OWID COVID-19 Dataset
 def get_data_long(selected):
-    # al = pd.read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv')
-    al = pd.read_csv('https://covid.ourworldindata.org/data/owid-covid-data.csv')
+    al = pd.read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv')
     al = al[al['location'].isin(selected)] # Filtered selected countries
     al = al[['location', 'date', 'total_cases', 'new_cases', 'total_deaths', 'new_deaths', 'total_tests', 'new_tests', 'total_vaccinations', 'new_vaccinations', 'population']] # Filtered columns
     al.columns = ['Country', 'Date', 'Total Cases', 'New Cases', 'Total Deaths', 'New Deaths', 'Total Tests', 'New Tests', 'Total Vaccinations', 'New Vaccinations', 'Population'] # Rename columns
@@ -903,6 +902,7 @@ def abstract_and_portray(df, custom_style):
     # fpr_nb, tpr_nb, thresholds_nb = metrics.roc_curve(testy, result_list[1]) 
     fpr_dtre, tpr_dtre, thresholds_dtre = metrics.roc_curve(testy, result_list[1]) 
     
+    import matplotlib.pyplot as plt
     
     st.header('Receiver Operating Characteristic (ROC) Curve')
 
@@ -927,8 +927,6 @@ def abstract_and_portray(df, custom_style):
     precision_tre = metrics.precision_score(testy, predy_tre)
     precision_tre = "{:.2f}%".format(precision_tre*100)
     col2.metric(label='Decision Tree Precision', value=precision_tre)
-
-
     
 roc = abstract_and_portray(individual, custom_style)
 st.pyplot(roc)
@@ -993,23 +991,30 @@ def interpretation_rfr(model, your_state, your_age, your_gender, your_nationalit
     
     pred = model.predict(ndf)
     if pred[0] == 0:
-        print('Sorry...')
+        print('Our program show you are in risk')
+        st.write('Our program show you are in risk')
     elif pred[0] == 1:
-        print('You are Survival ! Stay Health and Stay Safe')
+        print('You are Survival ! Stay Healthy and Stay Safe')
+        st.write('You are Survival ! Stay Healthy and Stay Safe')
 
 #######################################################################################################################
 st.header('Test your survivability when you affected COVID-19 based on following characteristics')
 
-with st.form(key='my_form_3'):
-    your_state = str(st.number_input('In which state you currently stay', value='Selangor, Pahang, etc'))
-    your_age = int(st.number_input('How old are you', value=21))
-    your_gender = str(st.number_input('Gender', value='male or female'))
-    your_nationality = int(st.number_input('Malaysian ?', value='1 for Malaysian, 0 for foreigner'))
-    your_dose_1_since = int(st.number_input('How long since your took your first dose of vaccine ?', value='30, 30 days since your first dose'))
-    your_dose_2_since = int(st.number_input('How long since your took your second dose of vaccine ?', value='10, 10 days since your second dose'))   
 
+with st.form(key='my_form_3'):
+    # your_state = str(st.number_input('In which state you currently stay', value='Selangor, Pahang, etc'))
+    your_state = st.selectbox('In which state you currently stay', ('Selangor', 'Johor', 'Pahang'))
+    your_age = int(st.number_input('How old are you', value=21))
+    # your_gender = str(st.number_input('Gender', value='male or female'))
+    your_gender = st.selectbox('Your Gender', ('male', 'female'))
+    # your_nationality = int(st.number_input('Malaysian ?', value='1 for Malaysian, 0 for foreigner'))
+    your_nationality = int(st.selectbox('Malaysian ? (1: Yes | 0: No)', (1, 0)))
+    your_dose_1_since = int(st.number_input('How long since your took your first dose of vaccine ?', value=30))
+    your_dose_2_since = int(st.number_input('How long since your took your second dose of vaccine ?', value=10))   
     submit_3 = st.form_submit_button(label='Submit')
 
 interpretation_rfr(survivability_rfr, your_state, your_age, your_gender, your_nationality, your_dose_1_since, your_dose_2_since)
+
+
 
 
